@@ -1,11 +1,11 @@
-FROM alpine:3.10
+FROM alpine:3.10.2
 
 LABEL description "Rainloop is a simple, modern & fast web-based client" \
-      maintainer="Hardware <contact@meshup.net>"
+      maintainer="Sarek <sarek@uliweb.de>"
 
 ARG GPG_FINGERPRINT="3B79 7ECE 694F 3B7B 70F3  11A4 ED7C 49D9 87DA 4591"
-
-ENV UID=991 GID=991 UPLOAD_MAX_SIZE=25M LOG_TO_STDOUT=false MEMORY_LIMIT=128M
+ARG UPLOAD_MAX_SIZE=25M
+ARG MEMORY_LIMIT=128M
 
 RUN echo "@community https://nl.alpinelinux.org/alpine/v3.10/community" >> /etc/apk/repositories \
  && apk -U upgrade \
@@ -16,8 +16,6 @@ RUN echo "@community https://nl.alpinelinux.org/alpine/v3.10/community" >> /etc/
  && apk add \
     ca-certificates \
     nginx \
-    s6 \
-    su-exec \
     php7-fpm@community \
     php7-curl@community \
     php7-iconv@community \
@@ -25,13 +23,6 @@ RUN echo "@community https://nl.alpinelinux.org/alpine/v3.10/community" >> /etc/
     php7-dom@community \
     php7-openssl@community \
     php7-json@community \
-    php7-zlib@community \
-    php7-pdo_pgsql@community \
-    php7-pdo_mysql@community \
-    php7-pdo_sqlite@community \
-    php7-sqlite3@community \
-    php7-ldap@community \
-    php7-simplexml@community \
  && cd /tmp \
  && wget -q https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip \
  && wget -q https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip.asc \
@@ -45,10 +36,14 @@ RUN echo "@community https://nl.alpinelinux.org/alpine/v3.10/community" >> /etc/
  && find /rainloop -type d -exec chmod 755 {} \; \
  && find /rainloop -type f -exec chmod 644 {} \; \
  && apk del build-dependencies \
- && rm -rf /tmp/* /var/cache/apk/* /root/.gnupg
+ && rm -rf /tmp/* /var/cache/apk/* /root/.gnupg \
+ && chmod o+w /dev/stdout
 
 COPY rootfs /
-RUN chmod +x /usr/local/bin/run.sh /services/*/run /services/.s6-svscan/*
+RUN chmod +x /run.sh /services/*/run /services/.s6-svscan/* \
+ && sed -i "s/<UPLOAD_MAX_SIZE>/${UPLOAD_MAX_SIZE}/" /etc/nginx/nginx.conf \
+ && sed -i "s/<UPLOAD_MAX_SIZE>/${UPLOAD_MAX_SIZE}/" /etc/php7/php-fpm.conf \
+ && sed -i "s/<MEMORY_LIMIT>/${MEMORY_LIMIT}/" /etc/php7/php-fpm.conf
 VOLUME /rainloop/data
 EXPOSE 8888
-CMD ["run.sh"]
+ENTRYPOINT ["/run.sh"]
