@@ -22,9 +22,11 @@ RUN echo "@community https://nl.alpinelinux.org/alpine/latest-stable/community" 
 	php7-xml@community \
 	php7-dom@community \
 	php7-openssl@community \
-	php7-json@community \
-	&& cd /tmp \
-	&& wget -q https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip \
+	php7-json@community
+
+WORKDIR /tmp
+
+RUN wget -q https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip \
 	&& wget -q https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip.asc \
 	&& wget -q https://www.rainloop.net/repository/RainLoop.asc \
 	&& gpg --import RainLoop.asc \
