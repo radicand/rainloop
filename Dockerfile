@@ -7,7 +7,7 @@ ARG GPG_FINGERPRINT="3B79 7ECE 694F 3B7B 70F3  11A4 ED7C 49D9 87DA 4591"
 ARG UPLOAD_MAX_SIZE=25M
 ARG MEMORY_LIMIT=128M
 
-RUN echo "@community https://nl.alpinelinux.org/alpine/latest-stable/community" >> /etc/apk/repositories \
+RUN echo "@community https://dl-cdn.alpinelinux.org/alpine/latest-stable/community" >> /etc/apk/repositories \
 	&& apk -U upgrade \
 	&& apk add -t build-dependencies \
 	gnupg \
