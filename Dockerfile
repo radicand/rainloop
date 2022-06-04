@@ -7,14 +7,14 @@ ARG GPG_FINGERPRINT="3B79 7ECE 694F 3B7B 70F3  11A4 ED7C 49D9 87DA 4591"
 ARG UPLOAD_MAX_SIZE=25M
 ARG MEMORY_LIMIT=128M
 
-RUN echo "@community https://dl-cdn.alpinelinux.org/alpine/latest-stable/community" >> /etc/apk/repositories \
+RUN echo "@community https://nl.alpinelinux.org/alpine/latest-stable/community" >> /etc/apk/repositories \
 	&& apk -U upgrade \
 	&& apk add -t build-dependencies \
 	gnupg \
 	openssl \
-	wget \
 	&& apk add \
 	ca-certificates \
+	curl \
 	nginx \
 	php7-fpm@community \
 	php7-curl@community \
@@ -22,13 +22,11 @@ RUN echo "@community https://dl-cdn.alpinelinux.org/alpine/latest-stable/communi
 	php7-xml@community \
 	php7-dom@community \
 	php7-openssl@community \
-	php7-json@community
-
-WORKDIR /tmp
-
-RUN wget -q https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip \
-	&& wget -q https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip.asc \
-	&& wget -q https://www.rainloop.net/repository/RainLoop.asc \
+	php7-json@community \
+	&& cd /tmp \
+	&& curl -LO https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip \
+	&& curl -LO https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip.asc \
+	&& curl -LO https://www.rainloop.net/repository/RainLoop.asc \
 	&& gpg --import RainLoop.asc \
 	&& FINGERPRINT="$(LANG=C gpg --verify rainloop-community-latest.zip.asc rainloop-community-latest.zip 2>&1 \
 	| sed -n "s#Primary key fingerprint: \(.*\)#\1#p")" \
@@ -43,12 +41,13 @@ RUN wget -q https://www.rainloop.net/repository/webmail/rainloop-community-lates
 
 COPY rootfs /
 RUN chmod +x /run.sh /services/*/run /services/.s6-svscan/* \
+	&& chown nginx:nginx /rainloop/data \
 	&& sed -i "s/<UPLOAD_MAX_SIZE>/${UPLOAD_MAX_SIZE}/" /etc/nginx/nginx.conf \
 	&& sed -i "s/<UPLOAD_MAX_SIZE>/${UPLOAD_MAX_SIZE}/" /etc/php7/php-fpm.conf \
 	&& sed -i "s/<MEMORY_LIMIT>/${MEMORY_LIMIT}/" /etc/php7/php-fpm.conf
-RUN chown nginx:nginx /rainloop/data
+USER nginx
 VOLUME /rainloop/data
 EXPOSE 8888
-
-USER nginx
+HEALTHCHECK --interval=10s --timeout=3s \
+	CMD curl -f http://localhost:8888 || exit 1
 ENTRYPOINT ["/run.sh"]
